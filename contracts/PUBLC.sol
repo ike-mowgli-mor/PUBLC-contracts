@@ -53,7 +53,7 @@ contract PUBLC is PUBLCEntity, Pausable, Proxied {
 
     /**
      * Sets the escrow address
-     * @param escrowAddress The new escrow address to use
+     * @param newEscrowAddress The new escrow address to use
      */
     function setEscrow(address newEscrowAddress, string version) public onlyOwner whenNotPaused {
         setNewPublcAccount(_escrowAddress, newEscrowAddress, "Escrow", version);
