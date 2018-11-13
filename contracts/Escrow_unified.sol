@@ -211,7 +211,7 @@ interface IERC20 {
 
 
 /**
- * @title proxy
+ * @title Proxied
  * @dev The proxy contract has an proxy address, and provides basic authorization control
  * functions, this simplifies the implementation of "user permissions".
  */

@@ -57,8 +57,8 @@ contract PUBLC is PUBLCEntity, Pausable, Proxied {
     }
 
     /**
-     * Sets the bank address
-     * @param bankAddress address The new bank address to use
+     * Sets the reserve address
+     * @param newReserveAddress address The new reserve address to use
      */
     function setReserve(address newReserveAddress, string version) public onlyOwner whenNotPaused {
         setNewPublcAccount(_reserveAddress, newReserveAddress, "Reserve", version);
