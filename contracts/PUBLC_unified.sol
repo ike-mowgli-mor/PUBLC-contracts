@@ -159,7 +159,7 @@ contract PauserRole {
   }
 }
 
-interface IERC20Allowance {
+interface IERC20Extended{
 
     function increaseAllowance(
         address spender,
@@ -339,15 +339,24 @@ contract Pausable is PauserRole {
   }
 }
 
-contract PublcEntity {
+contract PUBLCEntity {
     string private _name;
     string private _version;
 
+    /**
+     * Constructor for PUBLC contract
+     * @param proxy address The address of PUBLC platform's account which performs the transactions
+     */
     constructor(string name, string version) public {
         _name = name;
         _version = version;
     }
 
+    /**
+     * Validates the contract's name and version
+     * @param version name The new PUBLC's name to validate
+     * @param version string The new PUBLC's version to validate
+     */
     function validate(string name, string version) public view {
         require(uint(keccak256(abi.encodePacked(_name))) == uint(keccak256(abi.encodePacked(name))));
         require(uint(keccak256(abi.encodePacked(_version))) == uint(keccak256(abi.encodePacked(version))));
@@ -359,8 +368,13 @@ contract PublcEntity {
 
 
 
-contract PublcAccount is PublcEntity, Pausable, Proxied {
 
+contract PUBLCAccount is PUBLCEntity, Pausable, Proxied {
+
+    /**
+     * Constructor for PUBLC contract
+     * @param proxy address The address PUBLC contract which performs the actions on this contract
+     */
     constructor(address proxy) public {
         transferProxy(proxy);
         addPauser(proxy);
@@ -370,28 +384,20 @@ contract PublcAccount is PublcEntity, Pausable, Proxied {
         return IERC20(tokenAddress).transfer(to, value);
     }
 
-    function approve(address tokenAddress, address spender, uint256 value)
-    public onlyProxyOrOwner whenNotPaused returns (bool) {
+    function approve(address tokenAddress, address spender, uint256 value) public onlyProxyOrOwner whenNotPaused returns (bool) {
         return IERC20(tokenAddress).approve(spender, value);
     }
-    function transferFrom(address tokenAddress, address from, address to, uint256 value)
-    public onlyProxyOrOwner whenNotPaused returns (bool) {
+
+    function transferFrom(address tokenAddress, address from, address to, uint256 value) public onlyProxyOrOwner whenNotPaused returns (bool) {
         return IERC20(tokenAddress).transferFrom(from, to, value);
     }
-    function increaseAllowance(
-        address tokenAddress,
-        address spender,
-        uint256 addedValue
-) public onlyProxyOrOwner whenNotPaused returns (bool) {
-        return IERC20Allowance(tokenAddress).increaseAllowance(spender, addedValue);
+
+    function increaseAllowance(address tokenAddress, address spender, uint256 addedValue) public onlyProxyOrOwner whenNotPaused returns (bool) {
+        return IERC20Extended(tokenAddress).increaseAllowance(spender, addedValue);
     }
 
-    function decreaseAllowance(
-        address tokenAddress,
-        address spender,
-        uint256 subtractedValue
-) public onlyProxyOrOwner whenNotPaused returns (bool) {
-        return IERC20Allowance(tokenAddress).decreaseAllowance(spender, subtractedValue);
+    function decreaseAllowance(address tokenAddress, address spender, uint256 subtractedValue) public onlyProxyOrOwner whenNotPaused returns (bool) {
+        return IERC20Extended(tokenAddress).decreaseAllowance(spender, subtractedValue);
     }
 }
 
@@ -461,17 +467,17 @@ library SafeMath {
 
 
 contract Escrow is PUBLCAccount {
-    constructor(address proxy) public PublcEntity("Escrow", "1.0.0") PUBLCAccount(proxy) {}
+    constructor(address proxy) public PUBLCEntity("Escrow", "1.0.0") PUBLCAccount(proxy) {}
 }
 
 
 
 contract Reserve is PUBLCAccount {
-    constructor(address proxy) public PublcEntity("Reserve", "1.0.0") PUBLCAccount(proxy) {}
+    constructor(address proxy) public PUBLCEntity("Reserve", "1.0.0") PUBLCAccount(proxy) {}
 }
 
 
-contract PUBLC is PublcEntity, Pausable, Proxied {
+contract PUBLC is PUBLCEntity, Pausable, Proxied {
     using SafeMath for uint256;
 
     struct PublcTransaction {
@@ -483,81 +489,113 @@ contract PUBLC is PublcEntity, Pausable, Proxied {
     address private _tokenAddress;
     address private _reserveAddress;
     address private _escrowAddress;
-    mapping (string => PublcTransaction) _publcTransactions;
+    mapping (string => PublcTransaction) private _publcTransactions;
 
-    constructor(address proxy) public PublcEntity("Publc", "1.0.0") {
+    /**
+     * Constructor for PUBLC contract
+     * @param proxy address The address of PUBLC platform's account which performs the transactions
+     */
+    constructor(address proxy) public PUBLCEntity("PUBLC", "1.0.0") {
         transferProxy(proxy);
     }
 
+     // events
     event PublcTransactionEvent(string publxId, address from, address to, uint256 value);
+    event SetTokenAddress(address tokenAddress);
+    event SetNewPublcAccount(address currentAddress, address newAddress, string name, string version);
+    event Retire(address publcAddress);
 
-    event PublcError(string);
-
-    function circulatingSupply() public view returns(uint256) {
-        IERC20 token = IERC20(_tokenAddress);
-        return token.totalSupply().sub(token.balanceOf(_reserveAddress));
+     /**
+      * Sets the token address
+      * @param tokenAddress address The new token address to use
+      */
+    function setTokenAddress(address tokenAddress) public onlyOwner whenNotPaused {
+        _tokenAddress = tokenAddress;
+         emit SetTokenAddress(_tokenAddress);
     }
 
-    function setTokenAddress(address tokenAddress) public onlyOwner whenNotPaused { _tokenAddress = tokenAddress; }
-
-    function setEscrow(address newEscrowAddress, string version)
-    public
-    onlyOwner
-    whenNotPaused {
-
+    /**
+     * Sets the escrow address
+     * @param escrowAddress address The new escrow address to use
+     */
+    function setEscrow(address newEscrowAddress, string version) public onlyOwner whenNotPaused {
         setNewPublcAccount(_escrowAddress, newEscrowAddress, "Escrow", version);
         _escrowAddress = newEscrowAddress;
     }
 
-    function setReserve(address newReserveAddress, string version)
-    public
-    onlyOwner
-    whenNotPaused {
-
+    /**
+     * Sets the bank address
+     * @param bankAddress address The new bank address to use
+     */
+    function setReserve(address newReserveAddress, string version) public onlyOwner whenNotPaused {
         setNewPublcAccount(_reserveAddress, newReserveAddress, "Reserve", version);
         _reserveAddress = newReserveAddress;
     }
-    function setNewPublcAccount(address currAccount, address newAccount, string name, string version) internal onlyOwner whenNotPaused {
 
-        // Validating the new PublcEntity
-        PublcEntity(newAccount).validate(name, version);
-
-        if (currAccount != address(0)) {
-            uint256 balance = IERC20(_tokenAddress).balanceOf(currAccount);
-            PUBLCAccount paCurrAccount = PUBLCAccount(currAccount);
-            paCurrAccount.transfer(_tokenAddress, newAccount, balance);
-            paCurrAccount.pause();
+    /**
+     * Transfers the current PUBLCAccount contract's balance to the PUBLCAccount new contract and pauses the current one
+     * @param currentAddress address The current PUBLCAccount's address
+     * @param newAddress address The new PUBLCAccount's address
+     * @param name string The new PUBLCAccount's name to validate
+     * @param version string address The new PUBLCAccount's version to validate
+     */
+    function setNewPublcAccount(address currentAddress, address newAddress, string name, string version) private onlyOwner whenNotPaused {
+        PUBLCEntity(newAddress).validate(name, version);
+        if (currentAddress != address(0)) {
+            uint256 balance = IERC20(_tokenAddress).balanceOf(currentAddress);
+            PUBLCAccount currentPublcAccount = PUBLCAccount(currentAddress);
+            currentPublcAccount.transfer(_tokenAddress, newAddress, balance);
+            currentPublcAccount.pause();
         }
+        emit SetNewPublcAccount(currentAddress, newAddress, name, version);
     }
 
-    function tokenAddress() public view returns (address) { return _tokenAddress; }
-    function escrowAddress() public view returns (address) { return _escrowAddress; }
-    function reserveAddress() public view returns (address) { return _reserveAddress; }
-
+    /**
+     * Performs a transaction that came from PUBLC platform
+     * @param publcTxId string The transaction id in PUBLC's platform
+     * @param from address The sender contract's address
+     * @param to address The reciever's address
+     * @param value uint256 The value of the tokens to be sent
+     */
     function doPublcTransaction(string publcTxId, address from, address to, uint256 value) public onlyProxyOrOwner whenNotPaused {
-
-        if (from == _reserveAddress || from == _escrowAddress) {
-            require(value > 0);
-            require(_publcTransactions[publcTxId].value == 0);
-            PUBLCAccount(from).transfer(_tokenAddress, to, value);
-            _publcTransactions[publcTxId] = PublcTransaction(publcTxId, from, to, value);
-            emit PublcTransactionEvent(publcTxId, from, to, value);
-        }
-        else {
-            emit PublcError("Unsupported PUBLC transaction. Currently only supporting transactions from Reserve or Escrow");
-            revert();
-        }
+        require(from == _reserveAddress || from == _escrowAddress);
+        require(value > 0);
+        require(_publcTransactions[publcTxId].value == 0);
+        PUBLCAccount(from).transfer(_tokenAddress, to, value);
+        _publcTransactions[publcTxId] = PublcTransaction(publcTxId, from, to, value);
+        emit PublcTransactionEvent(publcTxId, from, to, value);
     }
+
+    /**
+     * Stops the current PUBLC contract and switches it to new PUBLC contract
+     * @param newPublc address The new PUBLC's address
+     * @param version address The new PUBLC's version to validate
+     */
+    function setNewPublc(address newPublc, string version) public onlyOwner whenNotPaused {
+        PUBLCEntity(newPublc).validate("PUBLC", version);
+        PUBLCAccount(_reserveAddress).transferProxy(newPublc);
+        PUBLCAccount(_escrowAddress).transferProxy(newPublc);
+        pause();
+    }
+
+    function tokenAddress() public view returns (address) {
+        return _tokenAddress;
+    }
+
+    function escrowAddress() public view returns (address) {
+        return _escrowAddress;
+    }
+
+    function reserveAddress() public view returns (address) {
+        return _reserveAddress;
+    }
+
     function publcTx(string publcTxId) public view returns (address, address, uint256) {
         return (_publcTransactions[publcTxId].from, _publcTransactions[publcTxId].to, _publcTransactions[publcTxId].value);
     }
 
-    function retire(address newPublc, string version) public onlyOwner whenNotPaused {
-
-        // Validating the new Publc
-        PublcEntity(newPublc).validate("Publc", version);
-        PUBLCAccount(_reserveAddress).transferProxy(newPublc);
-        PUBLCAccount(_escrowAddress).transferProxy(newPublc);
-        pause();
+    function circulatingSupply() public view returns(uint256) {
+        IERC20 token = IERC20(_tokenAddress);
+        return token.totalSupply().sub(token.balanceOf(_reserveAddress));
     }
 }

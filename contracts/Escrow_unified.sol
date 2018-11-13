@@ -159,7 +159,7 @@ contract PauserRole {
   }
 }
 
-interface IERC20Allowance {
+interface IERC20Extended{
 
     function increaseAllowance(
         address spender,
@@ -339,15 +339,24 @@ contract Pausable is PauserRole {
   }
 }
 
-contract PublcEntity {
+contract PUBLCEntity {
     string private _name;
     string private _version;
 
+    /**
+     * Constructor for PUBLC contract
+     * @param proxy address The address of PUBLC platform's account which performs the transactions
+     */
     constructor(string name, string version) public {
         _name = name;
         _version = version;
     }
 
+    /**
+     * Validates the contract's name and version
+     * @param version name The new PUBLC's name to validate
+     * @param version string The new PUBLC's version to validate
+     */
     function validate(string name, string version) public view {
         require(uint(keccak256(abi.encodePacked(_name))) == uint(keccak256(abi.encodePacked(name))));
         require(uint(keccak256(abi.encodePacked(_version))) == uint(keccak256(abi.encodePacked(version))));
@@ -359,8 +368,13 @@ contract PublcEntity {
 
 
 
-contract PUBLCAccount is PublcEntity, Pausable, Proxied {
 
+contract PUBLCAccount is PUBLCEntity, Pausable, Proxied {
+
+    /**
+     * Constructor for PUBLC contract
+     * @param proxy address The address PUBLC contract which performs the actions on this contract
+     */
     constructor(address proxy) public {
         transferProxy(proxy);
         addPauser(proxy);
@@ -370,31 +384,23 @@ contract PUBLCAccount is PublcEntity, Pausable, Proxied {
         return IERC20(tokenAddress).transfer(to, value);
     }
 
-    function approve(address tokenAddress, address spender, uint256 value)
-    public onlyProxyOrOwner whenNotPaused returns (bool) {
+    function approve(address tokenAddress, address spender, uint256 value) public onlyProxyOrOwner whenNotPaused returns (bool) {
         return IERC20(tokenAddress).approve(spender, value);
     }
-    function transferFrom(address tokenAddress, address from, address to, uint256 value)
-    public onlyProxyOrOwner whenNotPaused returns (bool) {
+
+    function transferFrom(address tokenAddress, address from, address to, uint256 value) public onlyProxyOrOwner whenNotPaused returns (bool) {
         return IERC20(tokenAddress).transferFrom(from, to, value);
     }
-    function increaseAllowance(
-        address tokenAddress,
-        address spender,
-        uint256 addedValue
-) public onlyProxyOrOwner whenNotPaused returns (bool) {
-        return IERC20Allowance(tokenAddress).increaseAllowance(spender, addedValue);
+
+    function increaseAllowance(address tokenAddress, address spender, uint256 addedValue) public onlyProxyOrOwner whenNotPaused returns (bool) {
+        return IERC20Extended(tokenAddress).increaseAllowance(spender, addedValue);
     }
 
-    function decreaseAllowance(
-        address tokenAddress,
-        address spender,
-        uint256 subtractedValue
-) public onlyProxyOrOwner whenNotPaused returns (bool) {
-        return IERC20Allowance(tokenAddress).decreaseAllowance(spender, subtractedValue);
+    function decreaseAllowance(address tokenAddress, address spender, uint256 subtractedValue) public onlyProxyOrOwner whenNotPaused returns (bool) {
+        return IERC20Extended(tokenAddress).decreaseAllowance(spender, subtractedValue);
     }
 }
 
 contract Escrow is PUBLCAccount {
-    constructor(address proxy) public PublcEntity("Escrow", "1.0.0") PUBLCAccount(proxy) {}
+    constructor(address proxy) public PUBLCEntity("Escrow", "1.0.0") PUBLCAccount(proxy) {}
 }
