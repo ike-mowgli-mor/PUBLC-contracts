@@ -1,17 +1,21 @@
 pragma solidity ^0.4.24;
 
-import "./PUBLCEntity.sol";
-import "./Pausable.sol";
-import "./Proxied.sol";
 import "../ERC20/IERC20.sol";
 import "../ERC20/IERC20Extended.sol";
+import "./Pausable.sol";
+import "./Proxied.sol";
+import "./PUBLCEntity.sol";
 
-
+/**
+ * @title PUBLCAccount
+ *
+ * A contract account managed by PUBLC, which holds token funds and performs all ERC20 functionalities.
+ */
 contract PUBLCAccount is PUBLCEntity, Pausable, Proxied {
 
     /**
-     * Constructor for PUBLC contract
-     * @param proxy address The address PUBLC contract which performs the actions on this contract
+     * Constructor for PUBLCAccount contract
+     * @param proxy The address of PUBLC contract, which has permission to perform actions on this contract
      */
     constructor(address proxy) public {
         transferProxy(proxy);

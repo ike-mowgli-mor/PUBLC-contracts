@@ -445,13 +445,19 @@ contract ERC20 is IERC20 {
   }
 }
 
+/**
+ * @title PUBLCEntity
+ *
+ * A standard PUBLC contract for validation and versioning purposes
+ */
 contract PUBLCEntity {
     string private _name;
     string private _version;
 
     /**
-     * Constructor for PUBLC contract
-     * @param proxy address The address of PUBLC platform's account which performs the transactions
+     * Constructor for PUBLCEntity contract
+     * @param name The name of the contract
+     * @param name The version of the contract
      */
     constructor(string name, string version) public {
         _name = name;
@@ -460,8 +466,8 @@ contract PUBLCEntity {
 
     /**
      * Validates the contract's name and version
-     * @param version name The new PUBLC's name to validate
-     * @param version string The new PUBLC's version to validate
+     * @param name The new PUBLCEntity's name to validate
+     * @param version The new PUBLCEntity's version to validate
      */
     function validate(string name, string version) public view {
         require(uint(keccak256(abi.encodePacked(_name))) == uint(keccak256(abi.encodePacked(name))));
@@ -537,12 +543,21 @@ contract ERC20Pausable is ERC20, Pausable {
   }
 }
 
+/**
+ * @title PUBLX
+ *
+ * The contract of PUBLC platform's token
+ */
 contract PUBLX is ERC20Pausable {
     string public constant name = 'PUBLX';
     string public constant symbol = 'PUBLX';
     uint8 public constant decimals = 18;
     uint256 public constant INITIAL_SUPPLY = 100e9 * 10 ** uint256(decimals);
 
+     /**
+      * Constructor for PUBLX token
+      * @param reserveAddress The address of the reserve account which recieves the initial supply of tokens minted by the token contract.
+      */
     constructor(address reserveAddress) public {
         PUBLCEntity(reserveAddress).validate("Reserve", "1.0.0");
         _mint(reserveAddress, INITIAL_SUPPLY);

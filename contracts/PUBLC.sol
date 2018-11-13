@@ -1,15 +1,20 @@
 pragma solidity ^0.4.24;
 
+import "./math/SafeMath.sol";
+import "./ERC20/IERC20.sol";
+import "./types/Ownable.sol";
+import "./types/Proxied.sol";
+import "./types/Pausable.sol";
 import "./Reserve.sol";
 import "./Escrow.sol";
-import "./math/SafeMath.sol";
-import "./types/Pausable.sol";
-import "./types/Proxied.sol";
-import "./types/Ownable.sol";
 import "./types/PUBLCEntity.sol";
 import "./types/PUBLCAccount.sol";
-import "./ERC20/IERC20.sol";
 
+/**
+ * @title PUBLC
+ *
+ * Manages the Reserve and Escrow accounts and syncs PUBLC  platform's ledger to Ethereum.
+ */
 contract PUBLC is PUBLCEntity, Pausable, Proxied {
     using SafeMath for uint256;
 
@@ -24,23 +29,22 @@ contract PUBLC is PUBLCEntity, Pausable, Proxied {
     address private _escrowAddress;
     mapping (string => PublcTransaction) private _publcTransactions;
 
-    /**
-     * Constructor for PUBLC contract
-     * @param proxy address The address of PUBLC platform's account which performs the transactions
-     */
-    constructor(address proxy) public PUBLCEntity("PUBLC", "1.0.0") {
-        transferProxy(proxy);
-    }
-
-     // events
     event PublcTransactionEvent(string publxId, address from, address to, uint256 value);
     event SetTokenAddress(address tokenAddress);
     event SetNewPublcAccount(address currentAddress, address newAddress, string name, string version);
     event Retire(address publcAddress);
 
+    /**
+     * Constructor for PUBLC contract
+     * @param proxy The address of PUBLC platform's account which signs the transactions
+     */
+    constructor(address proxy) public PUBLCEntity("PUBLC", "1.0.0") {
+        transferProxy(proxy);
+    }
+
      /**
       * Sets the token address
-      * @param tokenAddress address The new token address to use
+      * @param tokenAddress The new token address to use
       */
     function setTokenAddress(address tokenAddress) public onlyOwner whenNotPaused {
         _tokenAddress = tokenAddress;
@@ -49,7 +53,7 @@ contract PUBLC is PUBLCEntity, Pausable, Proxied {
 
     /**
      * Sets the escrow address
-     * @param escrowAddress address The new escrow address to use
+     * @param escrowAddress The new escrow address to use
      */
     function setEscrow(address newEscrowAddress, string version) public onlyOwner whenNotPaused {
         setNewPublcAccount(_escrowAddress, newEscrowAddress, "Escrow", version);
@@ -58,7 +62,7 @@ contract PUBLC is PUBLCEntity, Pausable, Proxied {
 
     /**
      * Sets the reserve address
-     * @param newReserveAddress address The new reserve address to use
+     * @param newReserveAddress The new reserve address to use
      */
     function setReserve(address newReserveAddress, string version) public onlyOwner whenNotPaused {
         setNewPublcAccount(_reserveAddress, newReserveAddress, "Reserve", version);
@@ -66,11 +70,11 @@ contract PUBLC is PUBLCEntity, Pausable, Proxied {
     }
 
     /**
-     * Transfers the current PUBLCAccount contract's balance to the PUBLCAccount new contract and pauses the current one
-     * @param currentAddress address The current PUBLCAccount's address
-     * @param newAddress address The new PUBLCAccount's address
-     * @param name string The new PUBLCAccount's name to validate
-     * @param version string address The new PUBLCAccount's version to validate
+     * Changes the PUBLCAccount by transferring the current PUBLCAccount's balance to the new PUBLCAccount and pauses the current one.
+     * @param currentAddress The current PUBLCAccount's address
+     * @param newAddress The new PUBLCAccount's address
+     * @param name The new PUBLCAccount's name to validate
+     * @param version The new PUBLCAccount's version to validate
      */
     function setNewPublcAccount(address currentAddress, address newAddress, string name, string version) private onlyOwner whenNotPaused {
         PUBLCEntity(newAddress).validate(name, version);
@@ -84,11 +88,11 @@ contract PUBLC is PUBLCEntity, Pausable, Proxied {
     }
 
     /**
-     * Performs a transaction that came from PUBLC platform
-     * @param publcTxId string The transaction id in PUBLC's platform
-     * @param from address The sender contract's address
-     * @param to address The reciever's address
-     * @param value uint256 The value of the tokens to be sent
+     * Performs a transaction that syncs PUBLC platform's ledger with Ethereum.
+     * @param publcTxId The transaction ID in PUBLC platform's ledger
+     * @param from The sender contract's address
+     * @param to The reciever's address
+     * @param value The value of the tokens to be sent
      */
     function doPublcTransaction(string publcTxId, address from, address to, uint256 value) public onlyProxyOrOwner whenNotPaused {
         require(from == _reserveAddress || from == _escrowAddress);
@@ -100,9 +104,9 @@ contract PUBLC is PUBLCEntity, Pausable, Proxied {
     }
 
     /**
-     * Stops the current PUBLC contract and switches it to new PUBLC contract
-     * @param newPublc address The new PUBLC's address
-     * @param version address The new PUBLC's version to validate
+     * Switches to new PUBLC contract by transferring the proxy of PUBLCAccounts and pausing the current PUBLC contract.
+     * @param newPublc The new PUBLC's address
+     * @param version The new PUBLC's version to validate
      */
     function setNewPublc(address newPublc, string version) public onlyOwner whenNotPaused {
         PUBLCEntity(newPublc).validate("PUBLC", version);
@@ -127,6 +131,9 @@ contract PUBLC is PUBLCEntity, Pausable, Proxied {
         return (_publcTransactions[publcTxId].from, _publcTransactions[publcTxId].to, _publcTransactions[publcTxId].value);
     }
 
+    /**
+     * Returns the tokens supply which were distributed to circulation.
+     */
     function circulatingSupply() public view returns(uint256) {
         IERC20 token = IERC20(_tokenAddress);
         return token.totalSupply().sub(token.balanceOf(_reserveAddress));

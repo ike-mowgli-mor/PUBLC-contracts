@@ -159,60 +159,44 @@ contract PauserRole {
   }
 }
 
-interface IERC20Extended{
-
-    function increaseAllowance(
-        address spender,
-        uint256 addedValue
-    )
-    external
-    returns (bool);
-
-    function decreaseAllowance(
-        address spender,
-        uint256 subtractedValue
-    )
-    external
-    returns (bool);
-}
-
 /**
- * @title ERC20 interface
- * @dev see https://github.com/ethereum/EIPs/issues/20
+ * @title PUBLCEntity
+ *
+ * A standard PUBLC contract for validation and versioning purposes
  */
-interface IERC20 {
-  function totalSupply() external view returns (uint256);
+contract PUBLCEntity {
+    string private _name;
+    string private _version;
 
-  function balanceOf(address who) external view returns (uint256);
+    /**
+     * Constructor for PUBLCEntity contract
+     * @param name The name of the contract
+     * @param name The version of the contract
+     */
+    constructor(string name, string version) public {
+        _name = name;
+        _version = version;
+    }
 
-  function allowance(address owner, address spender)
-    external view returns (uint256);
+    /**
+     * Validates the contract's name and version
+     * @param name The new PUBLCEntity's name to validate
+     * @param version The new PUBLCEntity's version to validate
+     */
+    function validate(string name, string version) public view {
+        require(uint(keccak256(abi.encodePacked(_name))) == uint(keccak256(abi.encodePacked(name))));
+        require(uint(keccak256(abi.encodePacked(_version))) == uint(keccak256(abi.encodePacked(version))));
+    }
 
-  function transfer(address to, uint256 value) external returns (bool);
-
-  function approve(address spender, uint256 value)
-    external returns (bool);
-
-  function transferFrom(address from, address to, uint256 value)
-    external returns (bool);
-
-  event Transfer(
-    address indexed from,
-    address indexed to,
-    uint256 value
-  );
-
-  event Approval(
-    address indexed owner,
-    address indexed spender,
-    uint256 value
-  );
+    function name() public view returns (string) { return _name; }
+    function version() public view returns (string) { return _version; }
 }
+
 
 
 /**
  * @title Proxied
- * @dev The proxy contract has an proxy address, and provides basic authorization control
+ * @dev The proxy contract has a proxy address, and provides basic authorization control
  * functions, this simplifies the implementation of "user permissions".
  */
 contract Proxied is Ownable {
@@ -221,7 +205,7 @@ contract Proxied is Ownable {
     event proxyTransferred(
         address indexed previousProxy,
         address indexed newProxy
-);
+    );
 
     /**
      * @dev The proxy constructor sets the original `proxy` of the contract to the sender
@@ -240,7 +224,7 @@ contract Proxied is Ownable {
     }
 
     /**
-     * @dev Throws if called by any account other than the proxy.
+     * @dev Throws if called by any account other than the proxy or owner.
      */
     modifier onlyProxyOrOwner() {
         require(isProxy() || isOwner());
@@ -257,8 +241,7 @@ contract Proxied is Ownable {
     /**
      * @dev Allows the current proxy to relinquish control of the contract.
      * @notice Renouncing to proxy will leave the contract without an proxy.
-     * It will not be possible to call the functions with the `onlyproxy`
-     * modifier anymore.
+     * It will only be possible to call the functions with the `onlyProxyOrOwner` modifier using the owner.
      */
     function renounceProxy() public onlyProxyOrOwner {
         emit proxyTransferred(_proxy, address(0));
@@ -339,41 +322,67 @@ contract Pausable is PauserRole {
   }
 }
 
-contract PUBLCEntity {
-    string private _name;
-    string private _version;
+interface IERC20Extended{
 
-    /**
-     * Constructor for PUBLC contract
-     * @param proxy address The address of PUBLC platform's account which performs the transactions
-     */
-    constructor(string name, string version) public {
-        _name = name;
-        _version = version;
-    }
+    function increaseAllowance(
+        address spender,
+        uint256 addedValue
+    )
+    external
+    returns (bool);
 
-    /**
-     * Validates the contract's name and version
-     * @param version name The new PUBLC's name to validate
-     * @param version string The new PUBLC's version to validate
-     */
-    function validate(string name, string version) public view {
-        require(uint(keccak256(abi.encodePacked(_name))) == uint(keccak256(abi.encodePacked(name))));
-        require(uint(keccak256(abi.encodePacked(_version))) == uint(keccak256(abi.encodePacked(version))));
-    }
+    function decreaseAllowance(
+        address spender,
+        uint256 subtractedValue
+    )
+    external
+    returns (bool);
+}
 
-    function name() public view returns (string) { return _name; }
-    function version() public view returns (string) { return _version; }
+/**
+ * @title ERC20 interface
+ * @dev see https://github.com/ethereum/EIPs/issues/20
+ */
+interface IERC20 {
+  function totalSupply() external view returns (uint256);
+
+  function balanceOf(address who) external view returns (uint256);
+
+  function allowance(address owner, address spender)
+    external view returns (uint256);
+
+  function transfer(address to, uint256 value) external returns (bool);
+
+  function approve(address spender, uint256 value)
+    external returns (bool);
+
+  function transferFrom(address from, address to, uint256 value)
+    external returns (bool);
+
+  event Transfer(
+    address indexed from,
+    address indexed to,
+    uint256 value
+  );
+
+  event Approval(
+    address indexed owner,
+    address indexed spender,
+    uint256 value
+  );
 }
 
 
-
-
+/**
+ * @title PUBLCAccount
+ *
+ * A contract account managed by PUBLC, which holds token funds and performs all ERC20 functionalities.
+ */
 contract PUBLCAccount is PUBLCEntity, Pausable, Proxied {
 
     /**
-     * Constructor for PUBLC contract
-     * @param proxy address The address PUBLC contract which performs the actions on this contract
+     * Constructor for PUBLCAccount contract
+     * @param proxy The address of PUBLC contract, which has permission to perform actions on this contract
      */
     constructor(address proxy) public {
         transferProxy(proxy);
@@ -401,6 +410,15 @@ contract PUBLCAccount is PUBLCEntity, Pausable, Proxied {
     }
 }
 
+/**
+ * @title Reserve
+ *
+ * A contract account managed by PUBLC, which holds token funds not yet released to circulation.
+ */
 contract Reserve is PUBLCAccount {
+    /**
+     * Constructor for Escrow contract
+     * @param proxy The address of PUBLC contract, which has permission to perform actions on this contract
+     */
     constructor(address proxy) public PUBLCEntity("Reserve", "1.0.0") PUBLCAccount(proxy) {}
 }

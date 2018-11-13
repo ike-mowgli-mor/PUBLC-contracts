@@ -4,7 +4,7 @@ import "./Ownable.sol";
 
 /**
  * @title Proxied
- * @dev The proxy contract has an proxy address, and provides basic authorization control
+ * @dev The proxy contract has a proxy address, and provides basic authorization control
  * functions, this simplifies the implementation of "user permissions".
  */
 contract Proxied is Ownable {
@@ -13,7 +13,7 @@ contract Proxied is Ownable {
     event proxyTransferred(
         address indexed previousProxy,
         address indexed newProxy
-);
+    );
 
     /**
      * @dev The proxy constructor sets the original `proxy` of the contract to the sender
@@ -32,7 +32,7 @@ contract Proxied is Ownable {
     }
 
     /**
-     * @dev Throws if called by any account other than the proxy.
+     * @dev Throws if called by any account other than the proxy or owner.
      */
     modifier onlyProxyOrOwner() {
         require(isProxy() || isOwner());
@@ -49,8 +49,7 @@ contract Proxied is Ownable {
     /**
      * @dev Allows the current proxy to relinquish control of the contract.
      * @notice Renouncing to proxy will leave the contract without an proxy.
-     * It will not be possible to call the functions with the `onlyproxy`
-     * modifier anymore.
+     * It will only be possible to call the functions with the `onlyProxyOrOwner` modifier using the owner.
      */
     function renounceProxy() public onlyProxyOrOwner {
         emit proxyTransferred(_proxy, address(0));
