@@ -32,7 +32,7 @@ contract PUBLC is PUBLCEntity, PUBLCPausable, PUBLCProxied {
     event PublcTransactionEvent(string publxId, address from, address to, uint256 value);
     event SetTokenAddress(address tokenAddress);
     event SetNewPublcAccount(address currentAddress, address newAddress, string name, string version);
-    event SetNewPublc(address publcAddress);
+    event SetNewPublc(address currentPublcAddress, address newPublcAddress, string version);
 
     /**
      * Constructor for PUBLC contract
@@ -101,7 +101,7 @@ contract PUBLC is PUBLCEntity, PUBLCPausable, PUBLCProxied {
         PUBLCAccount(_escrowAddress).addPauser(newPublc);
         PUBLCAccount(_escrowAddress).renouncePauser(this);
         pause();
-        emit SetNewPublc(newPublc);
+        emit SetNewPublc(this, newPublc, version);
     }
 
     /**
