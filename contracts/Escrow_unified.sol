@@ -126,7 +126,7 @@ contract PUBLCPauserRole is PUBLCOwnable {
   }
 
   modifier onlyPauser() {
-    require(false == isOwner() && isPauser(msg.sender));
+    require(isPauser(msg.sender));
     _;
   }
 
@@ -139,7 +139,7 @@ contract PUBLCPauserRole is PUBLCOwnable {
   }
 
   function renouncePauser(address account) public onlyPauser {
-    require(msg.sender == account);
+    require(false == isOwner() && msg.sender == account);
     _removePauser(account);
   }
 
