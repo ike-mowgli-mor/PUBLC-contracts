@@ -561,6 +561,19 @@ contract PUBLC is PUBLCEntity, PUBLCPausable, PUBLCProxied {
     }
 
     /**
+     * Switches to new PUBLC contract by transferring the proxy of PUBLCAccounts and pausing the current PUBLC contract.
+     * @param newPublc The new PUBLC's address
+     * @param version The new PUBLC's version to validate
+     */
+    function setNewPublc(address newPublc, string version) public onlyOwner whenNotPaused {
+        PUBLCEntity(newPublc).validate("PUBLC", version);
+        PUBLCAccount(_reserveAddress).transferProxy(newPublc);
+        PUBLCAccount(_escrowAddress).transferProxy(newPublc);
+        pause();
+        emit SetNewPublc(newPublc);
+    }
+
+    /**
      * Performs a transaction that syncs PUBLC platform's ledger with Ethereum.
      * @param publcTxId The transaction ID in PUBLC platform's ledger
      * @param from The sender contract's address
@@ -574,19 +587,6 @@ contract PUBLC is PUBLCEntity, PUBLCPausable, PUBLCProxied {
         PUBLCAccount(from).transfer(_tokenAddress, to, value);
         _publcTransactions[publcTxId] = PublcTransaction(publcTxId, from, to, value);
         emit PublcTransactionEvent(publcTxId, from, to, value);
-    }
-
-    /**
-     * Switches to new PUBLC contract by transferring the proxy of PUBLCAccounts and pausing the current PUBLC contract.
-     * @param newPublc The new PUBLC's address
-     * @param version The new PUBLC's version to validate
-     */
-    function setNewPublc(address newPublc, string version) public onlyOwner whenNotPaused {
-        PUBLCEntity(newPublc).validate("PUBLC", version);
-        PUBLCAccount(_reserveAddress).transferProxy(newPublc);
-        PUBLCAccount(_escrowAddress).transferProxy(newPublc);
-        pause();
-        emit SetNewPublc(newPublc);
     }
 
     function tokenAddress() public view returns (address) {
