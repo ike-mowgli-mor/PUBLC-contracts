@@ -1,11 +1,11 @@
 pragma solidity ^0.4.24;
 
 /**
- * @title Ownable
- * @dev The Ownable contract has an owner address, and provides basic authorization control
+ * @title PUBLCOwnable
+ * @dev The PUBLCOwnable contract has an owner address, and provides basic authorization control
  * functions, this simplifies the implementation of "user permissions".
  */
-contract Ownable {
+contract PUBLCOwnable {
   address private _owner;
 
   event OwnershipTransferred(
@@ -14,7 +14,7 @@ contract Ownable {
   );
 
   /**
-   * @dev The Ownable constructor sets the original `owner` of the contract to the sender
+   * @dev The PUBLCOwnable constructor sets the original `owner` of the contract to the sender
    * account.
    */
   constructor() internal {
@@ -42,17 +42,6 @@ contract Ownable {
    */
   function isOwner() public view returns(bool) {
     return msg.sender == _owner;
-  }
-
-  /**
-   * @dev Allows the current owner to relinquish control of the contract.
-   * @notice Renouncing to ownership will leave the contract without an owner.
-   * It will not be possible to call the functions with the `onlyOwner`
-   * modifier anymore.
-   */
-  function renounceOwnership() public onlyOwner {
-    emit OwnershipTransferred(_owner, address(0));
-    _owner = address(0);
   }
 
   /**

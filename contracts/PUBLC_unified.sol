@@ -109,7 +109,7 @@ library Roles {
 }
 
 
-contract PauserRole {
+contract PUBLCPauserRole {
   using Roles for Roles.Role;
 
   event PauserAdded(address indexed account);
@@ -130,12 +130,12 @@ contract PauserRole {
     return pausers.has(account);
   }
 
-  function addPauser(address account) public onlyPauser {
+  function addPauser(address account) public onlyOwner {
     _addPauser(account);
   }
 
-  function renouncePauser() public {
-    _removePauser(msg.sender);
+  function removePauser(address account) public onlyOwner {
+    _removePauser(account);
   }
 
   function _addPauser(address account) internal {
@@ -151,10 +151,10 @@ contract PauserRole {
 
 
 /**
- * @title Pausable
+ * @title PUBLCPausable
  * @dev Base contract which allows children to implement an emergency stop mechanism.
  */
-contract Pausable is PauserRole {
+contract PUBLCPausable is PUBLCPauserRole {
   event Paused(address account);
   event Unpaused(address account);
 
@@ -205,11 +205,11 @@ contract Pausable is PauserRole {
 }
 
 /**
- * @title Ownable
- * @dev The Ownable contract has an owner address, and provides basic authorization control
+ * @title PUBLCOwnable
+ * @dev The PUBLCOwnable contract has an owner address, and provides basic authorization control
  * functions, this simplifies the implementation of "user permissions".
  */
-contract Ownable {
+contract PUBLCOwnable {
   address private _owner;
 
   event OwnershipTransferred(
@@ -218,7 +218,7 @@ contract Ownable {
   );
 
   /**
-   * @dev The Ownable constructor sets the original `owner` of the contract to the sender
+   * @dev The PUBLCOwnable constructor sets the original `owner` of the contract to the sender
    * account.
    */
   constructor() internal {
@@ -249,17 +249,6 @@ contract Ownable {
   }
 
   /**
-   * @dev Allows the current owner to relinquish control of the contract.
-   * @notice Renouncing to ownership will leave the contract without an owner.
-   * It will not be possible to call the functions with the `onlyOwner`
-   * modifier anymore.
-   */
-  function renounceOwnership() public onlyOwner {
-    emit OwnershipTransferred(_owner, address(0));
-    _owner = address(0);
-  }
-
-  /**
    * @dev Allows the current owner to transfer control of the contract to a newOwner.
    * @param newOwner The address to transfer ownership to.
    */
@@ -280,11 +269,11 @@ contract Ownable {
 
 
 /**
- * @title Proxied
+ * @title PUBLCProxied
  * @dev The proxy contract has a proxy address, and provides basic authorization control
  * functions, this simplifies the implementation of "user permissions".
  */
-contract Proxied is Ownable {
+contract PUBLCProxied is PUBLCOwnable {
     address private _proxy;
 
     event proxyTransferred(
@@ -321,16 +310,6 @@ contract Proxied is Ownable {
      */
     function isProxy() public view returns(bool) {
         return msg.sender == _proxy;
-    }
-
-    /**
-     * @dev Allows the current proxy to relinquish control of the contract.
-     * @notice Renouncing to proxy will leave the contract without an proxy.
-     * It will only be possible to call the functions with the `onlyProxyOrOwner` modifier using the owner.
-     */
-    function renounceProxy() public onlyProxyOrOwner {
-        emit proxyTransferred(_proxy, address(0));
-        _proxy = address(0);
     }
 
     /**
@@ -442,7 +421,7 @@ contract PUBLCEntity {
  *
  * A contract account managed by PUBLC, which holds token funds and performs all ERC20 functionalities.
  */
-contract PUBLCAccount is PUBLCEntity, Pausable, Proxied {
+contract PUBLCAccount is PUBLCEntity, PUBLCPausable, PUBLCProxied {
 
     /**
      * Constructor for PUBLCAccount contract
@@ -509,7 +488,7 @@ contract Reserve is PUBLCAccount {
  *
  * Manages the Reserve and Escrow accounts and syncs PUBLC platform's ledger to Ethereum.
  */
-contract PUBLC is PUBLCEntity, Pausable, Proxied {
+contract PUBLC is PUBLCEntity, PUBLCPausable, PUBLCProxied {
     using SafeMath for uint256;
 
     struct PublcTransaction {

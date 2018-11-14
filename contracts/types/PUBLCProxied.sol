@@ -1,13 +1,13 @@
 pragma solidity ^0.4.24;
 
-import "./Ownable.sol";
+import "./PUBLCOwnable.sol";
 
 /**
- * @title Proxied
+ * @title PUBLCProxied
  * @dev The proxy contract has a proxy address, and provides basic authorization control
  * functions, this simplifies the implementation of "user permissions".
  */
-contract Proxied is Ownable {
+contract PUBLCProxied is PUBLCOwnable {
     address private _proxy;
 
     event proxyTransferred(
@@ -44,16 +44,6 @@ contract Proxied is Ownable {
      */
     function isProxy() public view returns(bool) {
         return msg.sender == _proxy;
-    }
-
-    /**
-     * @dev Allows the current proxy to relinquish control of the contract.
-     * @notice Renouncing to proxy will leave the contract without an proxy.
-     * It will only be possible to call the functions with the `onlyProxyOrOwner` modifier using the owner.
-     */
-    function renounceProxy() public onlyProxyOrOwner {
-        emit proxyTransferred(_proxy, address(0));
-        _proxy = address(0);
     }
 
     /**

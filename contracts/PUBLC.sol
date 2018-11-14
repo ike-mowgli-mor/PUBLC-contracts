@@ -2,9 +2,9 @@ pragma solidity ^0.4.24;
 
 import "./math/SafeMath.sol";
 import "./ERC20/IERC20.sol";
-import "./types/Ownable.sol";
-import "./types/Proxied.sol";
-import "./types/Pausable.sol";
+import "./types/PUBLCOwnable.sol";
+import "./types/PUBLCProxied.sol";
+import "./types/PUBLCPausable.sol";
 import "./Reserve.sol";
 import "./Escrow.sol";
 import "./types/PUBLCEntity.sol";
@@ -15,7 +15,7 @@ import "./types/PUBLCAccount.sol";
  *
  * Manages the Reserve and Escrow accounts and syncs PUBLC platform's ledger to Ethereum.
  */
-contract PUBLC is PUBLCEntity, Pausable, Proxied {
+contract PUBLC is PUBLCEntity, PUBLCPausable, PUBLCProxied {
     using SafeMath for uint256;
 
     struct PublcTransaction {
