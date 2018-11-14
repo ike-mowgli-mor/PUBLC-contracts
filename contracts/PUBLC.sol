@@ -96,6 +96,10 @@ contract PUBLC is PUBLCEntity, PUBLCPausable, PUBLCProxied {
         PUBLCEntity(newPublc).validate("PUBLC", version);
         PUBLCAccount(_reserveAddress).transferProxy(newPublc);
         PUBLCAccount(_escrowAddress).transferProxy(newPublc);
+        PUBLCAccount(_reserveAddress).addPauser(newPublc);
+        PUBLCAccount(_reserveAddress).renouncePauser(this);
+        PUBLCAccount(_escrowAddress).addPauser(newPublc);
+        PUBLCAccount(_escrowAddress).renouncePauser(this);
         pause();
         emit SetNewPublc(newPublc);
     }

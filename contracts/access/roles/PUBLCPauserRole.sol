@@ -15,8 +15,13 @@ contract PUBLCPauserRole is PUBLCOwnable {
     _addPauser(msg.sender);
   }
 
+  modifier onlyPauserOrOwner() {
+    require(isOwner() || isPauser(msg.sender));
+    _;
+  }
+
   modifier onlyPauser() {
-    require(isPauser(msg.sender));
+    require(false == isOwner() && isPauser(msg.sender));
     _;
   }
 
@@ -24,13 +29,18 @@ contract PUBLCPauserRole is PUBLCOwnable {
     return pausers.has(account);
   }
 
-  function addPauser(address account) public onlyOwner {
+  function addPauser(address account) public onlyPauserOrOwner {
     _addPauser(account);
   }
 
-  function removePauser(address account) public onlyOwner {
+  function renouncePauser(address account) public onlyPauser {
+    require(msg.sender == account);
     _removePauser(account);
   }
+
+  function removePauser(address account) public onlyOwner {
+      _removePauser(account);
+    }
 
   function _addPauser(address account) internal {
     pausers.add(account);
