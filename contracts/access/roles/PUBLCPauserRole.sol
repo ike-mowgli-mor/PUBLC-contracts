@@ -1,8 +1,9 @@
 pragma solidity ^0.4.24;
 
 import "../Roles.sol";
+import "../../types/PUBLCOwnable.sol";
 
-contract PUBLCPauserRole {
+contract PUBLCPauserRole is PUBLCOwnable {
   using Roles for Roles.Role;
 
   event PauserAdded(address indexed account);

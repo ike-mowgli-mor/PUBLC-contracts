@@ -12,9 +12,9 @@ files = files.filter(f => {
 
 
 const importLists = {
-    escrow: ["roles", "publcpauserrole", "publcpausable", "publcownable", "publcproxied", "ierc20", "ierc20extension", "publcentity", "publcaccount"],
-    reserve: ["roles", "publcpauserrole", "publcpausable", "publcownable", "publcproxied", "ierc20", "ierc20extension", "publcentity", "publcaccount"],
-    publc: ["safemath", "roles", "publcpauserrole", "publcpausable", "publcownable", "publcproxied", "ierc20", "ierc20extension", "publcentity", "publcaccount", "escrow", "reserve"],
+    escrow: ["roles", "publcownable", "publcpauserrole", "publcpausable", "publcproxied", "ierc20", "ierc20extension", "publcentity", "publcaccount"],
+    reserve: ["roles", "publcownable", "publcpauserrole", "publcpausable", "publcproxied", "ierc20", "ierc20extension", "publcentity", "publcaccount"],
+    publc: ["safemath", "publcownable", "roles", "publcpauserrole", "publcpausable", "publcproxied", "ierc20", "ierc20extension", "publcentity", "publcaccount", "escrow", "reserve"],
     publx: ["safemath", "roles", "pauserrole", "pausable", "ierc20", "erc20", "erc20pausable", "publcentity"]
 };
 
