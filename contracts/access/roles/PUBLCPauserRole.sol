@@ -34,11 +34,12 @@ contract PUBLCPauserRole is PUBLCOwnable {
   }
 
   function renouncePauser(address account) public onlyPauser {
-    require(false == isOwner() && msg.sender == account);
+    require(account == msg.sender && account != owner());
     _removePauser(account);
   }
 
   function removePauser(address account) public onlyOwner {
+    require(account != owner());
       _removePauser(account);
     }
 
