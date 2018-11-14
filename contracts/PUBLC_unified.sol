@@ -1,78 +1,21 @@
 pragma solidity ^0.4.24;
 
 
-/**
- * @title Ownable
- * @dev The Ownable contract has an owner address, and provides basic authorization control
- * functions, this simplifies the implementation of "user permissions".
- */
-contract Ownable {
-  address private _owner;
+interface IERC20Extension {
 
-  event OwnershipTransferred(
-    address indexed previousOwner,
-    address indexed newOwner
-  );
+    function increaseAllowance(
+        address spender,
+        uint256 addedValue
+    )
+    external
+    returns (bool);
 
-  /**
-   * @dev The Ownable constructor sets the original `owner` of the contract to the sender
-   * account.
-   */
-  constructor() internal {
-    _owner = msg.sender;
-    emit OwnershipTransferred(address(0), _owner);
-  }
-
-  /**
-   * @return the address of the owner.
-   */
-  function owner() public view returns(address) {
-    return _owner;
-  }
-
-  /**
-   * @dev Throws if called by any account other than the owner.
-   */
-  modifier onlyOwner() {
-    require(isOwner());
-    _;
-  }
-
-  /**
-   * @return true if `msg.sender` is the owner of the contract.
-   */
-  function isOwner() public view returns(bool) {
-    return msg.sender == _owner;
-  }
-
-  /**
-   * @dev Allows the current owner to relinquish control of the contract.
-   * @notice Renouncing to ownership will leave the contract without an owner.
-   * It will not be possible to call the functions with the `onlyOwner`
-   * modifier anymore.
-   */
-  function renounceOwnership() public onlyOwner {
-    emit OwnershipTransferred(_owner, address(0));
-    _owner = address(0);
-  }
-
-  /**
-   * @dev Allows the current owner to transfer control of the contract to a newOwner.
-   * @param newOwner The address to transfer ownership to.
-   */
-  function transferOwnership(address newOwner) public onlyOwner {
-    _transferOwnership(newOwner);
-  }
-
-  /**
-   * @dev Transfers control of the contract to a newOwner.
-   * @param newOwner The address to transfer ownership to.
-   */
-  function _transferOwnership(address newOwner) internal {
-    require(newOwner != address(0));
-    emit OwnershipTransferred(_owner, newOwner);
-    _owner = newOwner;
-  }
+    function decreaseAllowance(
+        address spender,
+        uint256 subtractedValue
+    )
+    external
+    returns (bool);
 }
 
 /**
@@ -159,6 +102,44 @@ contract PauserRole {
   }
 }
 
+
+/**
+ * @title PUBLCAccount
+ *
+ * A contract account managed by PUBLC, which holds token funds and performs all ERC20 functionalities.
+ */
+contract PUBLCAccount is PUBLCEntity, Pausable, Proxied {
+
+    /**
+     * Constructor for PUBLCAccount contract
+     * @param proxy The address of PUBLC contract, which has permission to perform actions on behalf of this contract
+     */
+    constructor(address proxy) public {
+        transferProxy(proxy);
+        addPauser(proxy);
+    }
+
+    function transfer(address tokenAddress, address to, uint256 value) public onlyProxyOrOwner whenNotPaused returns(bool) {
+        return IERC20(tokenAddress).transfer(to, value);
+    }
+
+    function approve(address tokenAddress, address spender, uint256 value) public onlyProxyOrOwner whenNotPaused returns (bool) {
+        return IERC20(tokenAddress).approve(spender, value);
+    }
+
+    function transferFrom(address tokenAddress, address from, address to, uint256 value) public onlyProxyOrOwner whenNotPaused returns (bool) {
+        return IERC20(tokenAddress).transferFrom(from, to, value);
+    }
+
+    function increaseAllowance(address tokenAddress, address spender, uint256 addedValue) public onlyProxyOrOwner whenNotPaused returns (bool) {
+        return IERC20Extension(tokenAddress).increaseAllowance(spender, addedValue);
+    }
+
+    function decreaseAllowance(address tokenAddress, address spender, uint256 subtractedValue) public onlyProxyOrOwner whenNotPaused returns (bool) {
+        return IERC20Extension(tokenAddress).decreaseAllowance(spender, subtractedValue);
+    }
+}
+
 /**
  * @title PUBLCEntity
  *
@@ -192,6 +173,91 @@ contract PUBLCEntity {
     function version() public view returns (string) { return _version; }
 }
 
+
+
+/**
+ * @title Escrow
+ *
+ * A contract account managed by PUBLC, which holds token funds owned by users, awaiting withdrawal.
+ */
+contract Escrow is PUBLCAccount {
+    /**
+     * Constructor for Escrow contract
+     * @param proxy The address of PUBLC contract, which has permission to perform actions on this contract
+     */
+    constructor(address proxy) public PUBLCEntity("Escrow", "1.0.0") PUBLCAccount(proxy) {}
+}
+
+
+
+/**
+ * @title Reserve
+ *
+ * A contract account managed by PUBLC, which holds token funds not yet released to circulation.
+ */
+contract Reserve is PUBLCAccount {
+    /**
+     * Constructor for Escrow contract
+     * @param proxy The address of PUBLC contract, which has permission to perform actions on this contract
+     */
+    constructor(address proxy) public PUBLCEntity("Reserve", "1.0.0") PUBLCAccount(proxy) {}
+}
+
+
+
+/**
+ * @title Pausable
+ * @dev Base contract which allows children to implement an emergency stop mechanism.
+ */
+contract Pausable is PauserRole {
+  event Paused(address account);
+  event Unpaused(address account);
+
+  bool private _paused;
+
+  constructor() internal {
+    _paused = false;
+  }
+
+  /**
+   * @return true if the contract is paused, false otherwise.
+   */
+  function paused() public view returns(bool) {
+    return _paused;
+  }
+
+  /**
+   * @dev Modifier to make a function callable only when the contract is not paused.
+   */
+  modifier whenNotPaused() {
+    require(!_paused);
+    _;
+  }
+
+  /**
+   * @dev Modifier to make a function callable only when the contract is paused.
+   */
+  modifier whenPaused() {
+    require(_paused);
+    _;
+  }
+
+  /**
+   * @dev called by the owner to pause, triggers stopped state
+   */
+  function pause() public onlyPauser whenNotPaused {
+    _paused = true;
+    emit Paused(msg.sender);
+  }
+
+  /**
+   * @dev called by the owner to unpause, returns to normal state
+   */
+  function unpause() public onlyPauser whenPaused {
+    _paused = false;
+    emit Unpaused(msg.sender);
+  }
+}
 
 
 /**
@@ -267,76 +333,78 @@ contract Proxied is Ownable {
     }
 }
 
-
 /**
- * @title Pausable
- * @dev Base contract which allows children to implement an emergency stop mechanism.
+ * @title Ownable
+ * @dev The Ownable contract has an owner address, and provides basic authorization control
+ * functions, this simplifies the implementation of "user permissions".
  */
-contract Pausable is PauserRole {
-  event Paused(address account);
-  event Unpaused(address account);
+contract Ownable {
+  address private _owner;
 
-  bool private _paused;
+  event OwnershipTransferred(
+    address indexed previousOwner,
+    address indexed newOwner
+  );
 
+  /**
+   * @dev The Ownable constructor sets the original `owner` of the contract to the sender
+   * account.
+   */
   constructor() internal {
-    _paused = false;
+    _owner = msg.sender;
+    emit OwnershipTransferred(address(0), _owner);
   }
 
   /**
-   * @return true if the contract is paused, false otherwise.
+   * @return the address of the owner.
    */
-  function paused() public view returns(bool) {
-    return _paused;
+  function owner() public view returns(address) {
+    return _owner;
   }
 
   /**
-   * @dev Modifier to make a function callable only when the contract is not paused.
+   * @dev Throws if called by any account other than the owner.
    */
-  modifier whenNotPaused() {
-    require(!_paused);
+  modifier onlyOwner() {
+    require(isOwner());
     _;
   }
 
   /**
-   * @dev Modifier to make a function callable only when the contract is paused.
+   * @return true if `msg.sender` is the owner of the contract.
    */
-  modifier whenPaused() {
-    require(_paused);
-    _;
+  function isOwner() public view returns(bool) {
+    return msg.sender == _owner;
   }
 
   /**
-   * @dev called by the owner to pause, triggers stopped state
+   * @dev Allows the current owner to relinquish control of the contract.
+   * @notice Renouncing to ownership will leave the contract without an owner.
+   * It will not be possible to call the functions with the `onlyOwner`
+   * modifier anymore.
    */
-  function pause() public onlyPauser whenNotPaused {
-    _paused = true;
-    emit Paused(msg.sender);
+  function renounceOwnership() public onlyOwner {
+    emit OwnershipTransferred(_owner, address(0));
+    _owner = address(0);
   }
 
   /**
-   * @dev called by the owner to unpause, returns to normal state
+   * @dev Allows the current owner to transfer control of the contract to a newOwner.
+   * @param newOwner The address to transfer ownership to.
    */
-  function unpause() public onlyPauser whenPaused {
-    _paused = false;
-    emit Unpaused(msg.sender);
+  function transferOwnership(address newOwner) public onlyOwner {
+    _transferOwnership(newOwner);
   }
-}
 
-interface IERC20Extended{
-
-    function increaseAllowance(
-        address spender,
-        uint256 addedValue
-    )
-    external
-    returns (bool);
-
-    function decreaseAllowance(
-        address spender,
-        uint256 subtractedValue
-    )
-    external
-    returns (bool);
+  /**
+   * @dev Transfers control of the contract to a newOwner.
+   * @param newOwner The address to transfer ownership to.
+   */
+  function _transferOwnership(address newOwner) internal {
+    require(newOwner != address(0));
+    emit OwnershipTransferred(_owner, newOwner);
+    _owner = newOwner;
+  }
 }
 
 /**
@@ -371,74 +439,6 @@ interface IERC20 {
     uint256 value
   );
 }
-
-
-/**
- * @title PUBLCAccount
- *
- * A contract account managed by PUBLC, which holds token funds and performs all ERC20 functionalities.
- */
-contract PUBLCAccount is PUBLCEntity, Pausable, Proxied {
-
-    /**
-     * Constructor for PUBLCAccount contract
-     * @param proxy The address of PUBLC contract, which has permission to perform actions on this contract
-     */
-    constructor(address proxy) public {
-        transferProxy(proxy);
-        addPauser(proxy);
-    }
-
-    function transfer(address tokenAddress, address to, uint256 value) public onlyProxyOrOwner whenNotPaused returns(bool) {
-        return IERC20(tokenAddress).transfer(to, value);
-    }
-
-    function approve(address tokenAddress, address spender, uint256 value) public onlyProxyOrOwner whenNotPaused returns (bool) {
-        return IERC20(tokenAddress).approve(spender, value);
-    }
-
-    function transferFrom(address tokenAddress, address from, address to, uint256 value) public onlyProxyOrOwner whenNotPaused returns (bool) {
-        return IERC20(tokenAddress).transferFrom(from, to, value);
-    }
-
-    function increaseAllowance(address tokenAddress, address spender, uint256 addedValue) public onlyProxyOrOwner whenNotPaused returns (bool) {
-        return IERC20Extended(tokenAddress).increaseAllowance(spender, addedValue);
-    }
-
-    function decreaseAllowance(address tokenAddress, address spender, uint256 subtractedValue) public onlyProxyOrOwner whenNotPaused returns (bool) {
-        return IERC20Extended(tokenAddress).decreaseAllowance(spender, subtractedValue);
-    }
-}
-
-
-/**
- * @title Escrow
- *
- * A contract account managed by PUBLC, which holds token funds owned by users, awaiting withdrawal.
- */
-contract Escrow is PUBLCAccount {
-    /**
-     * Constructor for Escrow contract
-     * @param proxy The address of PUBLC contract, which has permission to perform actions on this contract
-     */
-    constructor(address proxy) public PUBLCEntity("Escrow", "1.0.0") PUBLCAccount(proxy) {}
-}
-
-
-
-/**
- * @title Reserve
- *
- * A contract account managed by PUBLC, which holds token funds not yet released to circulation.
- */
-contract Reserve is PUBLCAccount {
-    /**
-     * Constructor for Escrow contract
-     * @param proxy The address of PUBLC contract, which has permission to perform actions on this contract
-     */
-    constructor(address proxy) public PUBLCEntity("Reserve", "1.0.0") PUBLCAccount(proxy) {}
-}
-
 
 /**
  * @title SafeMath
@@ -507,7 +507,7 @@ library SafeMath {
 /**
  * @title PUBLC
  *
- * Manages the Reserve and Escrow accounts and syncs PUBLC  platform's ledger to Ethereum.
+ * Manages the Reserve and Escrow accounts and syncs PUBLC platform's ledger to Ethereum.
  */
 contract PUBLC is PUBLCEntity, Pausable, Proxied {
     using SafeMath for uint256;
@@ -526,7 +526,7 @@ contract PUBLC is PUBLCEntity, Pausable, Proxied {
     event PublcTransactionEvent(string publxId, address from, address to, uint256 value);
     event SetTokenAddress(address tokenAddress);
     event SetNewPublcAccount(address currentAddress, address newAddress, string name, string version);
-    event Retire(address publcAddress);
+    event SetNewPublc(address publcAddress);
 
     /**
      * Constructor for PUBLC contract
@@ -607,6 +607,7 @@ contract PUBLC is PUBLCEntity, Pausable, Proxied {
         PUBLCAccount(_reserveAddress).transferProxy(newPublc);
         PUBLCAccount(_escrowAddress).transferProxy(newPublc);
         pause();
+        emit SetNewPublc(newPublc);
     }
 
     function tokenAddress() public view returns (address) {

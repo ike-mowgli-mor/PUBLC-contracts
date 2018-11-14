@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-interface IERC20Extended{
+interface IERC20Extension {
 
     function increaseAllowance(
         address spender,

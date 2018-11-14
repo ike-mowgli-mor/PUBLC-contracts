@@ -10,29 +10,22 @@ files = files.filter(f => {
     return true;
 });
 
+
+const importList = {
+    escrow: ["safemath", "roles", "pauserrole", "pausable", "ownable", "proxied", "ierc20", "ierc20extension", "publcentity", "publcaccount"],
+    reserve: ["safemath", "roles", "pauserrole", "pausable", "ownable", "proxied", "ierc20", "ierc20extension", "publcentity", "publcaccount"],
+    publc: ["safemath", "roles", "pauserrole", "pausable", "ownable", "proxied", "ierc20", "ierc20extension", "publcentity", "publcaccount", "escrow", "reservce"],
+    publx: ["safemath", "roles", "pauserrole", "pausable", "ierc20", "erc20", "erc20pausable", "publcentity"]
+};
+
+
 files.map(f => {
 
     console.log("file = " + f);
     let imports = [];
     doRec("./contracts/", f, imports);
 
-    const importsFiltered = [];
-    for (let i = 0 ; i < imports.length ; i++) {
-        const imp = imports[i];
-        let found = false;
-        for (let j = i + 1 ; j < imports.length ; j++) {
-            if (imports[j] === imp) {
-                found = true;
-                break;
-            }
-        }
-
-        if (!found) {
-            importsFiltered.push(imp);
-        }
-    }
-
-    imports = importsFiltered;
+    //console.log(imports);
 
     imports.unshift("./contracts/" + f);
 
@@ -101,8 +94,13 @@ function doRec(basePath, f, imports) {
 
     const importsInt = getFileImports(contract, basePath, imports);
     importsInt.map(i => {
-        doRec(path.dirname(i) + "/", path.basename(i), imports);
+        imports.push(i);
     });
+    importsInt.map(i => {
+        doRec(path.dirname(i) + "/", path.basename(i), imports);
+
+    });
+
 }
 
 function getFileImports(contract, basePath, imports) {
@@ -124,8 +122,8 @@ function getFileImports(contract, basePath, imports) {
             }
 
             const imp = path.resolve(basePath + importLineParts[1].substr(1,importLineParts[1].length-3));
-            imports.push(imp);
-            importsInt.push(imp);
+            if (!imports.includes(imp))
+                importsInt.push(imp);
         }
     });
 

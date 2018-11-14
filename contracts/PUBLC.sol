@@ -13,7 +13,7 @@ import "./types/PUBLCAccount.sol";
 /**
  * @title PUBLC
  *
- * Manages the Reserve and Escrow accounts and syncs PUBLC  platform's ledger to Ethereum.
+ * Manages the Reserve and Escrow accounts and syncs PUBLC platform's ledger to Ethereum.
  */
 contract PUBLC is PUBLCEntity, Pausable, Proxied {
     using SafeMath for uint256;
@@ -32,7 +32,7 @@ contract PUBLC is PUBLCEntity, Pausable, Proxied {
     event PublcTransactionEvent(string publxId, address from, address to, uint256 value);
     event SetTokenAddress(address tokenAddress);
     event SetNewPublcAccount(address currentAddress, address newAddress, string name, string version);
-    event Retire(address publcAddress);
+    event SetNewPublc(address publcAddress);
 
     /**
      * Constructor for PUBLC contract
@@ -113,6 +113,7 @@ contract PUBLC is PUBLCEntity, Pausable, Proxied {
         PUBLCAccount(_reserveAddress).transferProxy(newPublc);
         PUBLCAccount(_escrowAddress).transferProxy(newPublc);
         pause();
+        emit SetNewPublc(newPublc);
     }
 
     function tokenAddress() public view returns (address) {

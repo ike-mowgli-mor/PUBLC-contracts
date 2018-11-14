@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "../ERC20/IERC20.sol";
-import "../ERC20/IERC20Extended.sol";
+import "../ERC20/IERC20Extension.sol";
 import "./Pausable.sol";
 import "./Proxied.sol";
 import "./PUBLCEntity.sol";
@@ -15,7 +15,7 @@ contract PUBLCAccount is PUBLCEntity, Pausable, Proxied {
 
     /**
      * Constructor for PUBLCAccount contract
-     * @param proxy The address of PUBLC contract, which has permission to perform actions on this contract
+     * @param proxy The address of PUBLC contract, which has permission to perform actions on behalf of this contract
      */
     constructor(address proxy) public {
         transferProxy(proxy);
@@ -35,10 +35,10 @@ contract PUBLCAccount is PUBLCEntity, Pausable, Proxied {
     }
 
     function increaseAllowance(address tokenAddress, address spender, uint256 addedValue) public onlyProxyOrOwner whenNotPaused returns (bool) {
-        return IERC20Extended(tokenAddress).increaseAllowance(spender, addedValue);
+        return IERC20Extension(tokenAddress).increaseAllowance(spender, addedValue);
     }
 
     function decreaseAllowance(address tokenAddress, address spender, uint256 subtractedValue) public onlyProxyOrOwner whenNotPaused returns (bool) {
-        return IERC20Extended(tokenAddress).decreaseAllowance(spender, subtractedValue);
+        return IERC20Extension(tokenAddress).decreaseAllowance(spender, subtractedValue);
     }
 }
