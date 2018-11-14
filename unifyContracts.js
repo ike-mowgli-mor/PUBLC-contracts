@@ -11,10 +11,10 @@ files = files.filter(f => {
 });
 
 
-const importList = {
-    escrow: ["safemath", "roles", "pauserrole", "pausable", "ownable", "proxied", "ierc20", "ierc20extension", "publcentity", "publcaccount"],
-    reserve: ["safemath", "roles", "pauserrole", "pausable", "ownable", "proxied", "ierc20", "ierc20extension", "publcentity", "publcaccount"],
-    publc: ["safemath", "roles", "pauserrole", "pausable", "ownable", "proxied", "ierc20", "ierc20extension", "publcentity", "publcaccount", "escrow", "reservce"],
+const importLists = {
+    escrow: ["roles", "pauserrole", "pausable", "ownable", "proxied", "ierc20", "ierc20extension", "publcentity", "publcaccount"],
+    reserve: ["roles", "pauserrole", "pausable", "ownable", "proxied", "ierc20", "ierc20extension", "publcentity", "publcaccount"],
+    publc: ["safemath", "roles", "pauserrole", "pausable", "ownable", "proxied", "ierc20", "ierc20extension", "publcentity", "publcaccount", "escrow", "reserve"],
     publx: ["safemath", "roles", "pauserrole", "pausable", "ierc20", "erc20", "erc20pausable", "publcentity"]
 };
 
@@ -22,8 +22,25 @@ const importList = {
 files.map(f => {
 
     console.log("file = " + f);
+
+    const useImportLists = true;
+
     let imports = [];
     doRec("./contracts/", f, imports);
+
+    console.log(imports);
+    if (useImportLists) {
+        const filename = f.toLowerCase().substr(0,f.length-4);
+        const importsAuto = imports;
+        imports = importLists[filename].reverse();
+
+        imports.map((imp, ind) => {
+            imports[ind] = importsAuto.find(impAuto => {
+                const filenameAuto = path.basename(impAuto).toLowerCase();
+                return filenameAuto.substr(0,filenameAuto.length-4) === imp;
+            });
+        });
+    }
 
     //console.log(imports);
 

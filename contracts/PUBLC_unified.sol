@@ -1,21 +1,68 @@
 pragma solidity ^0.4.24;
 
 
-interface IERC20Extension {
+/**
+ * @title SafeMath
+ * @dev Math operations with safety checks that revert on error
+ */
+library SafeMath {
 
-    function increaseAllowance(
-        address spender,
-        uint256 addedValue
-    )
-    external
-    returns (bool);
+  /**
+  * @dev Multiplies two numbers, reverts on overflow.
+  */
+  function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+    // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
+    // benefit is lost if 'b' is also tested.
+    // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
+    if (a == 0) {
+      return 0;
+    }
 
-    function decreaseAllowance(
-        address spender,
-        uint256 subtractedValue
-    )
-    external
-    returns (bool);
+    uint256 c = a * b;
+    require(c / a == b);
+
+    return c;
+  }
+
+  /**
+  * @dev Integer division of two numbers truncating the quotient, reverts on division by zero.
+  */
+  function div(uint256 a, uint256 b) internal pure returns (uint256) {
+    require(b > 0); // Solidity only automatically asserts when dividing by 0
+    uint256 c = a / b;
+    // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+
+    return c;
+  }
+
+  /**
+  * @dev Subtracts two numbers, reverts on overflow (i.e. if subtrahend is greater than minuend).
+  */
+  function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+    require(b <= a);
+    uint256 c = a - b;
+
+    return c;
+  }
+
+  /**
+  * @dev Adds two numbers, reverts on overflow.
+  */
+  function add(uint256 a, uint256 b) internal pure returns (uint256) {
+    uint256 c = a + b;
+    require(c >= a);
+
+    return c;
+  }
+
+  /**
+  * @dev Divides two numbers and returns the remainder (unsigned integer modulo),
+  * reverts when dividing by zero.
+  */
+  function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+    require(b != 0);
+    return a % b;
+  }
 }
 
 /**
@@ -104,108 +151,6 @@ contract PauserRole {
 
 
 /**
- * @title PUBLCAccount
- *
- * A contract account managed by PUBLC, which holds token funds and performs all ERC20 functionalities.
- */
-contract PUBLCAccount is PUBLCEntity, Pausable, Proxied {
-
-    /**
-     * Constructor for PUBLCAccount contract
-     * @param proxy The address of PUBLC contract, which has permission to perform actions on behalf of this contract
-     */
-    constructor(address proxy) public {
-        transferProxy(proxy);
-        addPauser(proxy);
-    }
-
-    function transfer(address tokenAddress, address to, uint256 value) public onlyProxyOrOwner whenNotPaused returns(bool) {
-        return IERC20(tokenAddress).transfer(to, value);
-    }
-
-    function approve(address tokenAddress, address spender, uint256 value) public onlyProxyOrOwner whenNotPaused returns (bool) {
-        return IERC20(tokenAddress).approve(spender, value);
-    }
-
-    function transferFrom(address tokenAddress, address from, address to, uint256 value) public onlyProxyOrOwner whenNotPaused returns (bool) {
-        return IERC20(tokenAddress).transferFrom(from, to, value);
-    }
-
-    function increaseAllowance(address tokenAddress, address spender, uint256 addedValue) public onlyProxyOrOwner whenNotPaused returns (bool) {
-        return IERC20Extension(tokenAddress).increaseAllowance(spender, addedValue);
-    }
-
-    function decreaseAllowance(address tokenAddress, address spender, uint256 subtractedValue) public onlyProxyOrOwner whenNotPaused returns (bool) {
-        return IERC20Extension(tokenAddress).decreaseAllowance(spender, subtractedValue);
-    }
-}
-
-/**
- * @title PUBLCEntity
- *
- * A standard PUBLC contract for validation and versioning purposes
- */
-contract PUBLCEntity {
-    string private _name;
-    string private _version;
-
-    /**
-     * Constructor for PUBLCEntity contract
-     * @param name The name of the contract
-     * @param name The version of the contract
-     */
-    constructor(string name, string version) public {
-        _name = name;
-        _version = version;
-    }
-
-    /**
-     * Validates the contract's name and version
-     * @param name The new PUBLCEntity's name to validate
-     * @param version The new PUBLCEntity's version to validate
-     */
-    function validate(string name, string version) public view {
-        require(uint(keccak256(abi.encodePacked(_name))) == uint(keccak256(abi.encodePacked(name))));
-        require(uint(keccak256(abi.encodePacked(_version))) == uint(keccak256(abi.encodePacked(version))));
-    }
-
-    function name() public view returns (string) { return _name; }
-    function version() public view returns (string) { return _version; }
-}
-
-
-
-/**
- * @title Escrow
- *
- * A contract account managed by PUBLC, which holds token funds owned by users, awaiting withdrawal.
- */
-contract Escrow is PUBLCAccount {
-    /**
-     * Constructor for Escrow contract
-     * @param proxy The address of PUBLC contract, which has permission to perform actions on this contract
-     */
-    constructor(address proxy) public PUBLCEntity("Escrow", "1.0.0") PUBLCAccount(proxy) {}
-}
-
-
-
-/**
- * @title Reserve
- *
- * A contract account managed by PUBLC, which holds token funds not yet released to circulation.
- */
-contract Reserve is PUBLCAccount {
-    /**
-     * Constructor for Escrow contract
-     * @param proxy The address of PUBLC contract, which has permission to perform actions on this contract
-     */
-    constructor(address proxy) public PUBLCEntity("Reserve", "1.0.0") PUBLCAccount(proxy) {}
-}
-
-
-
-/**
  * @title Pausable
  * @dev Base contract which allows children to implement an emergency stop mechanism.
  */
@@ -256,6 +201,80 @@ contract Pausable is PauserRole {
   function unpause() public onlyPauser whenPaused {
     _paused = false;
     emit Unpaused(msg.sender);
+  }
+}
+
+/**
+ * @title Ownable
+ * @dev The Ownable contract has an owner address, and provides basic authorization control
+ * functions, this simplifies the implementation of "user permissions".
+ */
+contract Ownable {
+  address private _owner;
+
+  event OwnershipTransferred(
+    address indexed previousOwner,
+    address indexed newOwner
+  );
+
+  /**
+   * @dev The Ownable constructor sets the original `owner` of the contract to the sender
+   * account.
+   */
+  constructor() internal {
+    _owner = msg.sender;
+    emit OwnershipTransferred(address(0), _owner);
+  }
+
+  /**
+   * @return the address of the owner.
+   */
+  function owner() public view returns(address) {
+    return _owner;
+  }
+
+  /**
+   * @dev Throws if called by any account other than the owner.
+   */
+  modifier onlyOwner() {
+    require(isOwner());
+    _;
+  }
+
+  /**
+   * @return true if `msg.sender` is the owner of the contract.
+   */
+  function isOwner() public view returns(bool) {
+    return msg.sender == _owner;
+  }
+
+  /**
+   * @dev Allows the current owner to relinquish control of the contract.
+   * @notice Renouncing to ownership will leave the contract without an owner.
+   * It will not be possible to call the functions with the `onlyOwner`
+   * modifier anymore.
+   */
+  function renounceOwnership() public onlyOwner {
+    emit OwnershipTransferred(_owner, address(0));
+    _owner = address(0);
+  }
+
+  /**
+   * @dev Allows the current owner to transfer control of the contract to a newOwner.
+   * @param newOwner The address to transfer ownership to.
+   */
+  function transferOwnership(address newOwner) public onlyOwner {
+    _transferOwnership(newOwner);
+  }
+
+  /**
+   * @dev Transfers control of the contract to a newOwner.
+   * @param newOwner The address to transfer ownership to.
+   */
+  function _transferOwnership(address newOwner) internal {
+    require(newOwner != address(0));
+    emit OwnershipTransferred(_owner, newOwner);
+    _owner = newOwner;
   }
 }
 
@@ -334,80 +353,6 @@ contract Proxied is Ownable {
 }
 
 /**
- * @title Ownable
- * @dev The Ownable contract has an owner address, and provides basic authorization control
- * functions, this simplifies the implementation of "user permissions".
- */
-contract Ownable {
-  address private _owner;
-
-  event OwnershipTransferred(
-    address indexed previousOwner,
-    address indexed newOwner
-  );
-
-  /**
-   * @dev The Ownable constructor sets the original `owner` of the contract to the sender
-   * account.
-   */
-  constructor() internal {
-    _owner = msg.sender;
-    emit OwnershipTransferred(address(0), _owner);
-  }
-
-  /**
-   * @return the address of the owner.
-   */
-  function owner() public view returns(address) {
-    return _owner;
-  }
-
-  /**
-   * @dev Throws if called by any account other than the owner.
-   */
-  modifier onlyOwner() {
-    require(isOwner());
-    _;
-  }
-
-  /**
-   * @return true if `msg.sender` is the owner of the contract.
-   */
-  function isOwner() public view returns(bool) {
-    return msg.sender == _owner;
-  }
-
-  /**
-   * @dev Allows the current owner to relinquish control of the contract.
-   * @notice Renouncing to ownership will leave the contract without an owner.
-   * It will not be possible to call the functions with the `onlyOwner`
-   * modifier anymore.
-   */
-  function renounceOwnership() public onlyOwner {
-    emit OwnershipTransferred(_owner, address(0));
-    _owner = address(0);
-  }
-
-  /**
-   * @dev Allows the current owner to transfer control of the contract to a newOwner.
-   * @param newOwner The address to transfer ownership to.
-   */
-  function transferOwnership(address newOwner) public onlyOwner {
-    _transferOwnership(newOwner);
-  }
-
-  /**
-   * @dev Transfers control of the contract to a newOwner.
-   * @param newOwner The address to transfer ownership to.
-   */
-  function _transferOwnership(address newOwner) internal {
-    require(newOwner != address(0));
-    emit OwnershipTransferred(_owner, newOwner);
-    _owner = newOwner;
-  }
-}
-
-/**
  * @title ERC20 interface
  * @dev see https://github.com/ethereum/EIPs/issues/20
  */
@@ -440,69 +385,124 @@ interface IERC20 {
   );
 }
 
-/**
- * @title SafeMath
- * @dev Math operations with safety checks that revert on error
- */
-library SafeMath {
+interface IERC20Extension {
 
-  /**
-  * @dev Multiplies two numbers, reverts on overflow.
-  */
-  function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-    // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-    // benefit is lost if 'b' is also tested.
-    // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
-    if (a == 0) {
-      return 0;
+    function increaseAllowance(
+        address spender,
+        uint256 addedValue
+    )
+    external
+    returns (bool);
+
+    function decreaseAllowance(
+        address spender,
+        uint256 subtractedValue
+    )
+    external
+    returns (bool);
+}
+
+/**
+ * @title PUBLCEntity
+ *
+ * A standard PUBLC contract for validation and versioning purposes
+ */
+contract PUBLCEntity {
+    string private _name;
+    string private _version;
+
+    /**
+     * Constructor for PUBLCEntity contract
+     * @param name The name of the contract
+     * @param name The version of the contract
+     */
+    constructor(string name, string version) public {
+        _name = name;
+        _version = version;
     }
 
-    uint256 c = a * b;
-    require(c / a == b);
+    /**
+     * Validates the contract's name and version
+     * @param name The new PUBLCEntity's name to validate
+     * @param version The new PUBLCEntity's version to validate
+     */
+    function validate(string name, string version) public view {
+        require(uint(keccak256(abi.encodePacked(_name))) == uint(keccak256(abi.encodePacked(name))));
+        require(uint(keccak256(abi.encodePacked(_version))) == uint(keccak256(abi.encodePacked(version))));
+    }
 
-    return c;
-  }
-
-  /**
-  * @dev Integer division of two numbers truncating the quotient, reverts on division by zero.
-  */
-  function div(uint256 a, uint256 b) internal pure returns (uint256) {
-    require(b > 0); // Solidity only automatically asserts when dividing by 0
-    uint256 c = a / b;
-    // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-
-    return c;
-  }
-
-  /**
-  * @dev Subtracts two numbers, reverts on overflow (i.e. if subtrahend is greater than minuend).
-  */
-  function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-    require(b <= a);
-    uint256 c = a - b;
-
-    return c;
-  }
-
-  /**
-  * @dev Adds two numbers, reverts on overflow.
-  */
-  function add(uint256 a, uint256 b) internal pure returns (uint256) {
-    uint256 c = a + b;
-    require(c >= a);
-
-    return c;
-  }
-
-  /**
-  * @dev Divides two numbers and returns the remainder (unsigned integer modulo),
-  * reverts when dividing by zero.
-  */
-  function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-    require(b != 0);
-    return a % b;
-  }
+    function name() public view returns (string) { return _name; }
+    function version() public view returns (string) { return _version; }
 }
+
+
+
+/**
+ * @title PUBLCAccount
+ *
+ * A contract account managed by PUBLC, which holds token funds and performs all ERC20 functionalities.
+ */
+contract PUBLCAccount is PUBLCEntity, Pausable, Proxied {
+
+    /**
+     * Constructor for PUBLCAccount contract
+     * @param proxy The address of PUBLC contract, which has permission to perform actions on behalf of this contract
+     */
+    constructor(address proxy) public {
+        transferProxy(proxy);
+        addPauser(proxy);
+    }
+
+    function transfer(address tokenAddress, address to, uint256 value) public onlyProxyOrOwner whenNotPaused returns(bool) {
+        return IERC20(tokenAddress).transfer(to, value);
+    }
+
+    function approve(address tokenAddress, address spender, uint256 value) public onlyProxyOrOwner whenNotPaused returns (bool) {
+        return IERC20(tokenAddress).approve(spender, value);
+    }
+
+    function transferFrom(address tokenAddress, address from, address to, uint256 value) public onlyProxyOrOwner whenNotPaused returns (bool) {
+        return IERC20(tokenAddress).transferFrom(from, to, value);
+    }
+
+    function increaseAllowance(address tokenAddress, address spender, uint256 addedValue) public onlyProxyOrOwner whenNotPaused returns (bool) {
+        return IERC20Extension(tokenAddress).increaseAllowance(spender, addedValue);
+    }
+
+    function decreaseAllowance(address tokenAddress, address spender, uint256 subtractedValue) public onlyProxyOrOwner whenNotPaused returns (bool) {
+        return IERC20Extension(tokenAddress).decreaseAllowance(spender, subtractedValue);
+    }
+}
+
+
+/**
+ * @title Escrow
+ *
+ * A contract account managed by PUBLC, which holds token funds owned by users, awaiting withdrawal.
+ */
+contract Escrow is PUBLCAccount {
+    /**
+     * Constructor for Escrow contract
+     * @param proxy The address of PUBLC contract, which has permission to perform actions on this contract
+     */
+    constructor(address proxy) public PUBLCEntity("Escrow", "1.0.0") PUBLCAccount(proxy) {}
+}
+
+
+
+/**
+ * @title Reserve
+ *
+ * A contract account managed by PUBLC, which holds token funds not yet released to circulation.
+ */
+contract Reserve is PUBLCAccount {
+    /**
+     * Constructor for Escrow contract
+     * @param proxy The address of PUBLC contract, which has permission to perform actions on this contract
+     */
+    constructor(address proxy) public PUBLCEntity("Reserve", "1.0.0") PUBLCAccount(proxy) {}
+}
+
 
 /**
  * @title PUBLC
