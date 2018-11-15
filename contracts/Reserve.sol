@@ -10,7 +10,7 @@ import "./types/PUBLCAccount.sol";
  */
 contract Reserve is PUBLCAccount {
     /**
-     * Constructor for Escrow contract
+     * Constructor for Reserve contract
      * @param proxy The address of PUBLC contract, which has permission to perform actions on this contract
      */
     constructor(address proxy) public PUBLCEntity("Reserve", "1.0.0") PUBLCAccount(proxy) {}
