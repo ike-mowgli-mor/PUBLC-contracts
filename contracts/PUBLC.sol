@@ -108,7 +108,7 @@ contract PUBLC is PUBLCEntity, PUBLCPausable, PUBLCProxied {
      * Performs a transaction that syncs PUBLC platform's ledger with Ethereum.
      * @param publcTxId The transaction ID in PUBLC platform's ledger
      * @param from The sender contract's address
-     * @param to The reciever's address
+     * @param to The receiver's address
      * @param value The value of the tokens to be sent
      */
     function doPublcTransaction(string publcTxId, address from, address to, uint256 value) public onlyProxyOrOwner whenNotPaused {

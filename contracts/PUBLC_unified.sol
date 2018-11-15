@@ -404,7 +404,7 @@ contract PUBLCEntity {
     /**
      * Constructor for PUBLCEntity contract
      * @param name The name of the contract
-     * @param name The version of the contract
+     * @param version The version of the contract
      */
     constructor(string name, string version) public {
         _name = name;
@@ -592,7 +592,7 @@ contract PUBLC is PUBLCEntity, PUBLCPausable, PUBLCProxied {
      * Performs a transaction that syncs PUBLC platform's ledger with Ethereum.
      * @param publcTxId The transaction ID in PUBLC platform's ledger
      * @param from The sender contract's address
-     * @param to The reciever's address
+     * @param to The receiver's address
      * @param value The value of the tokens to be sent
      */
     function doPublcTransaction(string publcTxId, address from, address to, uint256 value) public onlyProxyOrOwner whenNotPaused {

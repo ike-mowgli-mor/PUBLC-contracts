@@ -340,7 +340,7 @@ contract PUBLCEntity {
     /**
      * Constructor for PUBLCEntity contract
      * @param name The name of the contract
-     * @param name The version of the contract
+     * @param version The version of the contract
      */
     constructor(string name, string version) public {
         _name = name;

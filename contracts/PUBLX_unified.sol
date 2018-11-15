@@ -516,7 +516,7 @@ contract PUBLCEntity {
     /**
      * Constructor for PUBLCEntity contract
      * @param name The name of the contract
-     * @param name The version of the contract
+     * @param version The version of the contract
      */
     constructor(string name, string version) public {
         _name = name;
@@ -551,7 +551,7 @@ contract PUBLX is ERC20Pausable {
 
      /**
       * Constructor for PUBLX token
-      * @param reserveAddress The address of the reserve account which recieves the initial supply of tokens minted by the token contract.
+      * @param reserveAddress The address of the reserve account which receives the initial supply of tokens minted by the token contract.
       */
     constructor(address reserveAddress) public {
         PUBLCEntity(reserveAddress).validate("Reserve", "1.0.0");
