@@ -38,7 +38,7 @@ contract PUBLC is PUBLCEntity, PUBLCPausable, PUBLCProxied {
      * Constructor for PUBLC contract
      * @param proxy The address of PUBLC platform's account which signs the transactions
      */
-    constructor(address proxy) public PUBLCEntity("PUBLC", "1.0.0") {
+    constructor(address proxy) public PUBLCEntity("PUBLC", "1.0.1") {
         transferProxy(proxy);
     }
 
@@ -112,7 +112,7 @@ contract PUBLC is PUBLCEntity, PUBLCPausable, PUBLCProxied {
      * @param value The value of the tokens to be sent
      */
     function doPublcTransaction(string publcTxId, address from, address to, uint256 value) public onlyProxyOrOwner whenNotPaused {
-        require(from == _reserveAddress || from == _escrowAddress);
+        require(from == _reserveAddress && to == _escrowAddress);
         require(value > 0);
         require(_publcTransactions[publcTxId].value == 0);
         PUBLCAccount(from).transfer(_tokenAddress, to, value);
